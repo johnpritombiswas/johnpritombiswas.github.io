@@ -190,6 +190,33 @@ header {
 }
 .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+.matrix-toggle { color: #00ff84; }
+.matrix-toggle.off { color: #7f8fa4; }
+.matrix-icon {
+  display: inline-flex;
+  gap: 0.25rem;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+.matrix-icon span {
+  display: block;
+  width: 3px;
+  height: 10px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 10px rgba(0,255,132,0.65);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.matrix-icon.off span {
+  box-shadow: none;
+  opacity: 0.45;
+}
+.matrix-icon span:nth-child(1) { height: 7px; }
+.matrix-icon span:nth-child(2) { height: 10px; }
+.matrix-icon span:nth-child(3) { height: 8px; }
+
 /* Mobile menu button */
 .ham {
   display: none;
@@ -1029,8 +1056,8 @@ footer p span { color: #93b4f5; }
     </nav>
 
     <div class="hd-right">
-      <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle theme" title="Toggle theme">
-        <i class="fas fa-moon"></i>
+      <button class="theme-btn matrix-toggle" id="matrixBtn" type="button" aria-label="Toggle matrix effect" title="Toggle matrix effect">
+        <span class="matrix-icon on"><span></span><span></span><span></span></span>
       </button>
       <button class="ham" id="ham" type="button" aria-label="Open menu" aria-controls="mnav" aria-expanded="false">
         <span></span><span></span><span></span>
@@ -1315,6 +1342,7 @@ footer p span { color: #93b4f5; }
 (function() {
   const canvas = document.getElementById('matrix-canvas');
   const ctx = canvas.getContext('2d');
+  window.matrixEnabled = true;
 
   const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEF<>{}[]|;:';
   let cols, drops, fontSize;
@@ -1324,7 +1352,13 @@ footer p span { color: #93b4f5; }
     canvas.height = window.innerHeight;
     fontSize = 13;
     cols  = Math.floor(canvas.width / fontSize);
+    resetMatrix();
+  }
+
+  function resetMatrix() {
+    if (!canvas || !cols) return;
     drops = Array(cols).fill(1).map(() => Math.random() * -100);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
 
   function getAccentColor() {
@@ -1333,6 +1367,11 @@ footer p span { color: #93b4f5; }
   }
 
   function draw() {
+    if (!window.matrixEnabled) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      return;
+    }
+
     const alpha = parseFloat(
       getComputedStyle(document.documentElement)
         .getPropertyValue('--matrix-alpha').trim()
@@ -1369,31 +1408,34 @@ footer p span { color: #93b4f5; }
 
   resize();
   window.addEventListener('resize', resize);
+  window.resetMatrix = resetMatrix;
   setInterval(draw, 45);
 })();
 
 /* ============================================
-   THEME TOGGLE
+   MATRIX TOGGLE
    ============================================ */
-const themeBtn = document.getElementById('themeBtn');
-const savedTheme = localStorage.getItem('theme');
-const initialTheme = savedTheme || document.documentElement.getAttribute('data-theme') || 'dark';
-document.documentElement.setAttribute('data-theme', initialTheme);
+const matrixBtn = document.getElementById('matrixBtn');
+const matrixCanvas = document.getElementById('matrix-canvas');
+const savedMatrix = localStorage.getItem('matrixEnabled');
+window.matrixEnabled = savedMatrix !== null ? savedMatrix === '1' : true;
 
-function updateThemeButton(theme) {
-  if (!themeBtn) return;
-  themeBtn.innerHTML = theme === 'light' ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
-  themeBtn.setAttribute('aria-label', theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme');
+function updateMatrixButton(enabled) {
+  if (!matrixBtn) return;
+  matrixBtn.classList.toggle('off', !enabled);
+  matrixBtn.innerHTML = enabled ? '<span class="matrix-icon on"><span></span><span></span><span></span></span>' : '<span class="matrix-icon off"><span></span><span></span><span></span></span>';
+  matrixBtn.setAttribute('aria-label', enabled ? 'Disable matrix effect' : 'Enable matrix effect');
+  if (matrixCanvas) matrixCanvas.style.display = enabled ? 'block' : 'none';
 }
 
-updateThemeButton(initialTheme);
+updateMatrixButton(window.matrixEnabled);
 
-if (themeBtn) {
-  themeBtn.addEventListener('click', () => {
-    const nextTheme = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', nextTheme);
-    localStorage.setItem('theme', nextTheme);
-    updateThemeButton(nextTheme);
+if (matrixBtn) {
+  matrixBtn.addEventListener('click', () => {
+    window.matrixEnabled = !window.matrixEnabled;
+    localStorage.setItem('matrixEnabled', window.matrixEnabled ? '1' : '0');
+    if (window.matrixEnabled && window.resetMatrix) window.resetMatrix();
+    updateMatrixButton(window.matrixEnabled);
   });
 }
 
