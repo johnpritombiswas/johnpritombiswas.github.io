@@ -1365,11 +1365,16 @@ footer p span { color: #93b4f5; }
   let cols, drops, fontSize;
 
   function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const newWidth = window.innerWidth;
+    const newHeight = window.innerHeight;
+    canvas.width  = newWidth;
+    canvas.height = newHeight;
     fontSize = 13;
-    cols  = Math.floor(canvas.width / fontSize);
-    resetMatrix();
+    const newCols = Math.floor(newWidth / fontSize);
+    if (newCols !== cols) {
+      cols = newCols;
+      resetMatrix();
+    }
   }
 
   function resetMatrix() {
